@@ -1,113 +1,67 @@
 package com.example.flotacolectivos;
 
-import android.os.AsyncTask;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import android.content.Intent;
+
+import org.json.JSONObject;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+
 
 public class ConexionServer {
 
-    // Interfaz para manejar los resultados de las solicitudes
+    private static final String BASE_URL = "http://192.168.249.46:3000/";
+    private static ServicoAPI apiService;
+
     public interface OnServerResponseListener {
         void onServerResponse(String response);
         void onServerError(Exception e);
     }
 
-    public static void obtenerDatos(OnServerResponseListener listener) {
-        String url = "http://192.168.249.46:3000/obtenerDatos";
+    public static void autenticarUsuario(String email, String contrasena, OnServerResponseListener listener) {
+        AuntenticarUsuario request = new AuntenticarUsuario(email, contrasena);
 
-        try {
-            new ServerRequestTask(listener, "GET", null).execute(url);
-        } catch (Exception e) {
-            e.printStackTrace();
-            listener.onServerError(e);
-        }
+        Call<Void> call = getApiService().autenticarUsuario(request);
+        call.enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    // Éxito
+                    listener.onServerResponse("Autenticación exitosa");
+
+                } else {
+                    try {
+                        // Manejo del error
+                        JSONObject errorBody = new JSONObject(response.errorBody().string());
+                        String errorMessage = errorBody.optString("message", "Error de autenticación");
+                        listener.onServerError(new Exception(errorMessage));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        listener.onServerError(new Exception("Error de autenticación"));
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                // Error de conexión
+                listener.onServerError(new Exception("Error de conexión"));
+            }
+        });
     }
 
-    // AsyncTask para realizar solicitudes al servidor en segundo plano
-    private static class ServerRequestTask extends AsyncTask<String, Void, String> {
-        private OnServerResponseListener listener;
-        private String requestMethod; // GET o POST
-        private String jsonInputString; // Datos JSON para la solicitud POST
+    private static ServicoAPI getApiService() {
+        if (apiService == null) {
+            Retrofit retrofit = new Retrofit.Builder()
+                    .baseUrl(BASE_URL)
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build();
 
-        ServerRequestTask(OnServerResponseListener listener, String requestMethod, String jsonInputString) {
-            this.listener = listener;
-            this.requestMethod = requestMethod;
-            this.jsonInputString = jsonInputString;
+            apiService = retrofit.create(ServicoAPI.class);
         }
-
-        @Override
-        protected String doInBackground(String... params) {
-            try {
-                if ("GET".equals(requestMethod)) {
-                    return hacerSolicitudGET(params[0]);
-                } else if ("POST".equals(requestMethod)) {
-                    return hacerSolicitudPOST(params[0], jsonInputString);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-                return null;
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            if (result != null) {
-                listener.onServerResponse(result);
-            } else {
-                listener.onServerError(new IOException("Error de conexión"));
-            }
-        }
-
-        // Método para realizar una solicitud GET al servidor
-        private String hacerSolicitudGET(String urlString) throws IOException {
-            URL url = new URL(urlString);
-            HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-            try {
-                InputStream in = urlConnection.getInputStream();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-                StringBuilder result = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    result.append(line);
-                }
-                return result.toString();
-            } finally {
-                urlConnection.disconnect();
-            }
-        }
-
-        // Método para realizar una solicitud POST al servidor con datos JSON
-        private String hacerSolicitudPOST(String urlString, String jsonInputString) throws IOException {
-            URL url = new URL(urlString);
-            HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-            try {
-                urlConnection.setRequestMethod("POST");
-                urlConnection.setRequestProperty("Content-Type", "application/json; utf-8");
-                urlConnection.setDoOutput(true);
-
-                try (OutputStream os = urlConnection.getOutputStream()) {
-                    byte[] input = jsonInputString.getBytes("utf-8");
-                    os.write(input, 0, input.length);
-                }
-
-                InputStream in = urlConnection.getInputStream();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-                StringBuilder result = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    result.append(line);
-                }
-                return result.toString();
-            } finally {
-                urlConnection.disconnect();
-            }
-        }
+        return apiService;
     }
-
 }
