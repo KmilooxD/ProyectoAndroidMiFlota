@@ -6,13 +6,28 @@
     android:layout_height="match_parent"
     tools:context=".AlertaConductor">
 
-    <TextView
-        android:id="@+id/textView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Hola"
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent" >
+
+        <Spinner
+            android:id="@+id/spinnerTipoAlerta"
+            android:layout_width="370dp"
+            android:layout_height="51dp"
+            android:layout_gravity="center"
+            android:layout_marginTop="250dp" />
+
+        <Button
+            android:id="@+id/btnEnviarAlerta"
+            android:layout_width="185dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="20dp"
+            android:text="Ingresar alerta" />
+    </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

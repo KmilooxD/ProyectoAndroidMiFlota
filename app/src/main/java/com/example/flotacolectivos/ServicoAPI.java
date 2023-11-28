@@ -5,4 +5,8 @@ import retrofit2.http.POST;
 public interface ServicoAPI {
     @POST("autenticarUsuario")
     Call<Void> autenticarUsuario(@Body AuntenticarUsuario request);
+
+    @POST("enviarAlerta")
+    Call<Void> almacenarAlerta(@Body TipoAlerta request);
 }
+

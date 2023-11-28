@@ -1,8 +1,10 @@
 package com.example.flotacolectivos;
-
-import android.content.Intent;
+import android.util.Log;
 
 import org.json.JSONObject;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -52,6 +54,52 @@ public class ConexionServer {
             }
         });
     }
+
+
+    public static void almacenarAlerta(String tipoAlerta, OnServerResponseListener listener) {
+        TipoAlerta alertaRequest = new TipoAlerta(tipoAlerta);
+
+        Call<Void> call = getApiService().almacenarAlerta(alertaRequest);
+        call.enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                try {
+                    if (response.isSuccessful()) {
+                        // Éxito
+                        listener.onServerResponse("Alerta almacenada correctamente");
+                    } else {
+                        // Manejo del error
+                        JSONObject errorBody = new JSONObject(response.errorBody().string());
+                        String errorMessage = errorBody.optString("message", "Error al almacenar la alerta");
+                        Log.e("ConexionServer", "Cuerpo de la respuesta en caso de error: " + errorBody.toString());
+                        listener.onServerError(new Exception(errorMessage));
+                    }
+                } catch (Exception e) {
+                    Log.e("ConexionServer", "Error al procesar la respuesta", e);
+                    StringWriter sw = new StringWriter();
+                    PrintWriter pw = new PrintWriter(sw);
+                    e.printStackTrace(pw);
+                    String stackTrace = sw.toString();
+                    listener.onServerError(new Exception("Error al procesar la respuesta. Stack trace: " + stackTrace));
+                }
+            }
+
+
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                // Error de conexión
+                listener.onServerError(new Exception("Error de conexión"));
+            }
+        });
+    }
+
+
+
+
+
+
+
 
     private static ServicoAPI getApiService() {
         if (apiService == null) {

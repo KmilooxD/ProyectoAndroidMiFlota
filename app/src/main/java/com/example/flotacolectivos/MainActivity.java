@@ -37,7 +37,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
-
     private void autenticarUsuario(String email, String contrasena) {
         // Realizar la solicitud al servidor para autenticar al usuario
 
@@ -54,9 +53,6 @@ public class MainActivity extends AppCompatActivity {
                 }else{
                     Toast.makeText(MainActivity.this, response, Toast.LENGTH_LONG).show();
                 }
-
-
-
             }
 
             @Override
