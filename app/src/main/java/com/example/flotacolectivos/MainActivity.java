@@ -1,5 +1,6 @@
 package com.example.flotacolectivos;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -37,31 +38,35 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
     private void autenticarUsuario(String email, String contrasena) {
         // Realizar la solicitud al servidor para autenticar al usuario
 
 
-        ConexionServer.autenticarUsuario(email, contrasena, new ConexionServer.OnServerResponseListener() {
+        ConexionServer.autenticarUsuario(email, contrasena, new ConexionServer.OnServerResponseListener<Object>() {
             @Override
-            public void onServerResponse(String response) {
-                // Manejar la respuesta exitosa del servidor
-                // Por ejemplo, abrir una nueva activid ad o mostrar un mensaje de éxito
+            public void onServerSuccess(String message) {
+                Toast.makeText(MainActivity.this, "Autenticación exitosa", Toast.LENGTH_SHORT).show();
 
+
+            }
+
+            @Override
+            public void onServerResponse(Object  response) {
+                // Este método no debería ser invocado en el caso de autenticarUsuario, pero implementarlo de todos modos
+                // o lanzar una UnsupportedOperationException para indicar que no se espera este tipo de respuesta.
+                // Manejar mensaje de éxito
                 if (response.equals("Autenticación exitosa")) {
                     Intent intent = new Intent(MainActivity.this, AlertaConductor.class);
                     startActivity(intent);
-                }else{
-                    Toast.makeText(MainActivity.this, response, Toast.LENGTH_LONG).show();
                 }
+
             }
 
             @Override
             public void onServerError(Exception e) {
-                // Manejar el error del servidor
-                // Por ejemplo, mostrar un mensaje de error al usuario
-                Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
-
-                e.printStackTrace();
+                // Manejar error de servidor
+                Toast.makeText(MainActivity.this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }

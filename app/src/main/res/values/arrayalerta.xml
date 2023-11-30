@@ -1,8 +1,0 @@
-<resources>
-    <string-array name="tipos_alerta">
-        <item>Congestión vehicular</item>
-        <item>Accidente</item>
-        <item>Reparación de calles</item>
-        <!-- Agrega más tipos según sea necesario -->
-    </string-array>
-</resources>

@@ -1,10 +1,12 @@
 package com.example.flotacolectivos;
+
+import android.content.Intent;
 import android.util.Log;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -18,10 +20,13 @@ public class ConexionServer {
     private static final String BASE_URL = "http://192.168.249.46:3000/";
     private static ServicoAPI apiService;
 
-    public interface OnServerResponseListener {
-        void onServerResponse(String response);
+    public interface OnServerResponseListener<T> {
+        void onServerSuccess(String message);
+        void onServerResponse(T response);
         void onServerError(Exception e);
     }
+
+
 
     public static void autenticarUsuario(String email, String contrasena, OnServerResponseListener listener) {
         AuntenticarUsuario request = new AuntenticarUsuario(email, contrasena);
@@ -55,47 +60,33 @@ public class ConexionServer {
         });
     }
 
-
-    public static void almacenarAlerta(String tipoAlerta, OnServerResponseListener listener) {
-        TipoAlerta alertaRequest = new TipoAlerta(tipoAlerta);
-
-        Call<Void> call = getApiService().almacenarAlerta(alertaRequest);
-        call.enqueue(new Callback<Void>() {
+    public static void obtenerEventosDesdeServidor(OnServerResponseListener<List<Evento>> listener) {
+        Call<List<Evento>> call = getApiService().obtenerNombresEventos();
+        call.enqueue(new Callback<List<Evento>>() {
             @Override
-            public void onResponse(Call<Void> call, Response<Void> response) {
-                try {
-                    if (response.isSuccessful()) {
-                        // Éxito
-                        listener.onServerResponse("Alerta almacenada correctamente");
-                    } else {
-                        // Manejo del error
-                        JSONObject errorBody = new JSONObject(response.errorBody().string());
-                        String errorMessage = errorBody.optString("message", "Error al almacenar la alerta");
-                        Log.e("ConexionServer", "Cuerpo de la respuesta en caso de error: " + errorBody.toString());
-                        listener.onServerError(new Exception(errorMessage));
-                    }
-                } catch (Exception e) {
-                    Log.e("ConexionServer", "Error al procesar la respuesta", e);
-                    StringWriter sw = new StringWriter();
-                    PrintWriter pw = new PrintWriter(sw);
-                    e.printStackTrace(pw);
-                    String stackTrace = sw.toString();
-                    listener.onServerError(new Exception("Error al procesar la respuesta. Stack trace: " + stackTrace));
+            public void onResponse(Call<List<Evento>> call, Response<List<Evento>> response) {
+                if (response.isSuccessful()) {
+                    // Éxito
+                    Log.d("API", "Respuesta exitosa: " + response.body());
+                    listener.onServerResponse(response.body());
+                } else {
+                    // Manejo del error
+                    Log.e("API", "Error en la respuesta del servidor: " + response.code());
+                    listener.onServerError(new Exception("Error en la respuesta del servidor: " + response.code()));
                 }
             }
 
 
-
             @Override
-            public void onFailure(Call<Void> call, Throwable t) {
+            public void onFailure(Call<List<Evento>> call, Throwable t) {
                 // Error de conexión
-                listener.onServerError(new Exception("Error de conexión"));
+                Log.e("API", "Error de conexión: " + t.getMessage());
+                t.printStackTrace(); // Agrega esta línea para imprimir el stack trace completo
+                listener.onServerError(new Exception("Error de conexión", t));
             }
+
         });
     }
-
-
-
 
 
 
