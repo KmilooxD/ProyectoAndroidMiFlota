@@ -1,9 +1,7 @@
 package com.example.flotacolectivos;
 
-import android.content.Intent;
 import android.util.Log;
 
-import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 
 import java.util.List;
@@ -25,7 +23,6 @@ public class ConexionServer {
         void onServerResponse(T response);
         void onServerError(Exception e);
     }
-
 
 
     public static void autenticarUsuario(String email, String contrasena, OnServerResponseListener listener) {
@@ -60,6 +57,12 @@ public class ConexionServer {
         });
     }
 
+
+
+
+
+
+
     public static void obtenerEventosDesdeServidor(OnServerResponseListener<List<Evento>> listener) {
         Call<List<Evento>> call = getApiService().obtenerNombresEventos();
         call.enqueue(new Callback<List<Evento>>() {
@@ -67,15 +70,34 @@ public class ConexionServer {
             public void onResponse(Call<List<Evento>> call, Response<List<Evento>> response) {
                 if (response.isSuccessful()) {
                     // Éxito
-                    Log.d("API", "Respuesta exitosa: " + response.body());
-                    listener.onServerResponse(response.body());
+                    List<Evento> eventos = response.body();
+                    // Actualizar el ID para cada evento
+                    for (Evento evento : eventos) {
+                        obtenerIdEvento(evento, new OnServerResponseListener<Evento>() {
+                            @Override
+                            public void onServerSuccess(String message) {
+                                // Lógica para éxito si es necesario
+                            }
+
+
+                            @Override
+                            public void onServerResponse(Evento response) {
+                                // No es necesario hacer nada aquí, ya que el ID ya se actualizó
+                            }
+
+                            @Override
+                            public void onServerError(Exception e) {
+                                // Manejar error si es necesario
+                            }
+                        });
+                    }
+                    listener.onServerResponse(eventos);
                 } else {
                     // Manejo del error
                     Log.e("API", "Error en la respuesta del servidor: " + response.code());
                     listener.onServerError(new Exception("Error en la respuesta del servidor: " + response.code()));
                 }
             }
-
 
             @Override
             public void onFailure(Call<List<Evento>> call, Throwable t) {
@@ -84,10 +106,34 @@ public class ConexionServer {
                 t.printStackTrace(); // Agrega esta línea para imprimir el stack trace completo
                 listener.onServerError(new Exception("Error de conexión", t));
             }
-
         });
     }
 
+    private static void obtenerIdEvento(Evento evento, OnServerResponseListener<Evento> listener) {
+        Call<Integer> call = getApiService().obtenerIdEvento(evento.toString());
+        call.enqueue(new Callback<Integer>() {
+            @Override
+            public void onResponse(Call<Integer> call, Response<Integer> response) {
+                if (response.isSuccessful()) {
+                    // Éxito
+                    evento.setId(response.body());
+                    listener.onServerResponse(evento);
+                } else {
+                    // Manejo del error
+                    Log.e("API", "Error en la respuesta del servidor: " + response.code());
+                    listener.onServerError(new Exception("Error en la respuesta del servidor: " + response.code()));
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Integer> call, Throwable t) {
+                // Error de conexión
+                Log.e("API", "Error de conexión: " + t.getMessage());
+                t.printStackTrace(); // Agrega esta línea para imprimir el stack trace completo
+                listener.onServerError(new Exception("Error de conexión", t));
+            }
+        });
+    }
 
 
 

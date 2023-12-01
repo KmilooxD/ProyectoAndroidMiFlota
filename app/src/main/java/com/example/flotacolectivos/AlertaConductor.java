@@ -14,6 +14,7 @@ public class AlertaConductor extends AppCompatActivity {
 
     Spinner spinerevento;
     Button btn_ingresarAlerta;
+    private Evento eventoSeleccionado;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,8 +50,21 @@ public class AlertaConductor extends AppCompatActivity {
         btn_ingresarAlerta.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // Lógica para manejar el clic del botón de enviar alerta
+                // Obtener el evento seleccionado del spinner
+                Evento eventoSeleccionado = (Evento) spinerevento.getSelectedItem();
+
+                // Verificar que se haya seleccionado un evento y obtener su ID
+                if (eventoSeleccionado != null) {
+                    int idEvento = eventoSeleccionado.getId();
+                    Toast.makeText(AlertaConductor.this, "ID del evento seleccionado: " + idEvento, Toast.LENGTH_SHORT).show();
+
+                    // Aquí puedes utilizar el idEvento según tus necesidades
+                } else {
+                    Toast.makeText(AlertaConductor.this, "Seleccione un evento primero", Toast.LENGTH_SHORT).show();
+                }
             }
         });
+
     }
+
 }
