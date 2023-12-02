@@ -1,12 +1,17 @@
 package com.example.flotacolectivos;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.Toast;
+
+import com.google.gson.JsonObject;
 
 import java.util.List;
 
@@ -15,6 +20,7 @@ public class AlertaConductor extends AppCompatActivity {
     Spinner spinerevento;
     Button btn_ingresarAlerta;
     private Evento eventoSeleccionado;
+    private AuntenticarUsuario autenticarUsuario; // Nueva variable de instancia
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,24 +53,74 @@ public class AlertaConductor extends AppCompatActivity {
             }
         });
 
+        // Obtener el AuntenticarUsuario de la intención al iniciar la actividad por primera vez
+        autenticarUsuario = obtenerAuntenticarUsuarioDeIntent();
+
         btn_ingresarAlerta.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 // Obtener el evento seleccionado del spinner
                 Evento eventoSeleccionado = (Evento) spinerevento.getSelectedItem();
 
-                // Verificar que se haya seleccionado un evento y obtener su ID
+                // Verificar que se haya seleccionado un evento
                 if (eventoSeleccionado != null) {
+                    // Verificar si se obtuvo correctamente el AuntenticarUsuario
+                    if (autenticarUsuario != null) {
+                        // Obtener el email del AuntenticarUsuario
+                        String email = autenticarUsuario.getEmail();
+
+                        // Hacer algo con el email y la contraseña...
+                        obtenerIdConductor(email);
+                    } else {
+                        Toast.makeText(AlertaConductor.this, "Error al obtener datos del usuario", Toast.LENGTH_SHORT).show();
+                    }
+
                     int idEvento = eventoSeleccionado.getId();
                     Toast.makeText(AlertaConductor.this, "ID del evento seleccionado: " + idEvento, Toast.LENGTH_SHORT).show();
-
                     // Aquí puedes utilizar el idEvento según tus necesidades
                 } else {
                     Toast.makeText(AlertaConductor.this, "Seleccione un evento primero", Toast.LENGTH_SHORT).show();
                 }
             }
         });
+    }
 
+    private void obtenerIdConductor(String email) {
+        ConexionServer.obtenerIdConductor(email, new ConexionServer.OnServerResponseListener<JsonObject>() {
+            @Override
+            public void onServerSuccess(String message) {
+                Toast.makeText(AlertaConductor.this, "Autenticación exitosa", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onServerResponse(JsonObject response) {
+                // Manejar la respuesta del servidor (obtuvimos el ID del conductor)
+                if (response != null && response.has("result") && response.getAsJsonObject("result").has("Fk_IdConductor")) {
+                    int idConductor = response.getAsJsonObject("result").get("Fk_IdConductor").getAsInt();
+                    Toast.makeText(AlertaConductor.this, "ID conductor: " + idConductor, Toast.LENGTH_LONG).show();
+                    Log.d("AlertaConductor", "ID conductor: " + idConductor);
+                } else {
+                    Toast.makeText(AlertaConductor.this, "Error: Respuesta nula o falta la clave Fk_IdConductor", Toast.LENGTH_SHORT).show();
+                    Log.e("AlertaConductor", "Error: Respuesta nula o falta la clave Fk_IdConductor");
+                }
+            }
+
+            @Override
+            public void onServerError(Exception e) {
+                // Manejar error de servidor al obtener el ID del conductor
+                Toast.makeText(AlertaConductor.this, "Error al obtener el ID del conductor: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    // Método para obtener el AuntenticarUsuario de la intención
+    private AuntenticarUsuario obtenerAuntenticarUsuarioDeIntent() {
+        Intent intent = getIntent();
+        if (intent.hasExtra("autenticarUsuario")) {
+            return (AuntenticarUsuario) intent.getSerializableExtra("autenticarUsuario");
+        } else {
+            return null;
+        }
     }
 
 }

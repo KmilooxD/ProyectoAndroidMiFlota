@@ -1,6 +1,6 @@
 package com.example.flotacolectivos;
-
-public class AuntenticarUsuario {
+import java.io.Serializable;
+public class AuntenticarUsuario implements Serializable {
     private String email;
     private String contrasena;
 
@@ -11,5 +11,7 @@ public class AuntenticarUsuario {
 
     }
 
-
+    public String getEmail() {
+        return email;
+    }
 }
