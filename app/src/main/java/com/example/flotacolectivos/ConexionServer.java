@@ -2,6 +2,8 @@ package com.example.flotacolectivos;
 
 import android.util.Log;
 
+import com.google.gson.JsonObject;
+
 import org.json.JSONObject;
 
 import java.util.List;
@@ -135,7 +137,29 @@ public class ConexionServer {
         });
     }
 
+    // Método para obtener el ID del conductor por email
+    public static void obtenerIdConductor(String email, OnServerResponseListener<JsonObject> listener) {
+        Call<JsonObject> call = getApiService().obtenerIdConductor(email);
+        call.enqueue(new Callback<JsonObject>() {
+            @Override
+            public void onResponse(Call<JsonObject> call, Response<JsonObject> response) {
+                if (response.isSuccessful()) {
+                    // Éxito
+                    Log.d("MainActivity", "Respuesta del servidor: " + response.body());
+                    listener.onServerResponse(response.body());
+                } else {
+                    // Manejo del error
+                    listener.onServerError(new Exception("Error en la respuesta del servidor: " + response.code()));
+                }
+            }
 
+            @Override
+            public void onFailure(Call<JsonObject> call, Throwable t) {
+                // Error de conexión
+                listener.onServerError(new Exception("Error de conexión: " + t.getMessage()));
+            }
+        });
+    }
 
 
     private static ServicoAPI getApiService() {

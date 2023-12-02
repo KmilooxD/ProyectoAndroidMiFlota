@@ -1,4 +1,6 @@
 package com.example.flotacolectivos;
+import com.google.gson.JsonObject;
+
 import  java.util.List;
 
 import retrofit2.Call;
@@ -16,4 +18,7 @@ public interface ServicoAPI {
 
     @GET("obtenerIdEvento/{nombre}")
     Call<Integer> obtenerIdEvento(@Path("nombre") String nombre);
+
+    @GET("obtenerIdConductor/{email}")
+    Call<JsonObject> obtenerIdConductor(@Path("email") String email);
 }
