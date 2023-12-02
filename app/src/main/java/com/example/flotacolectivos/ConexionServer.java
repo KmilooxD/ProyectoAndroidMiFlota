@@ -161,6 +161,30 @@ public class ConexionServer {
         });
     }
 
+    public static void registrarAlertaConductor(int idEvento, int fkIdConductor, String fecha, String hora, OnServerResponseListener<Object> listener) {
+        EventoConductor request = new EventoConductor(idEvento, fkIdConductor, fecha, hora);
+
+        Call<Void> call = getApiService().registrarAlertaConductor(idEvento, request);
+        call.enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    // Éxito
+                    listener.onServerResponse("Alerta del conductor registrada exitosamente");
+                } else {
+                    // Manejo del error
+                    listener.onServerError(new Exception("Error al registrar la alerta del conductor"));
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                // Error de conexión
+                listener.onServerError(new Exception("Error de conexión"));
+            }
+        });
+    }
+
 
     private static ServicoAPI getApiService() {
         if (apiService == null) {

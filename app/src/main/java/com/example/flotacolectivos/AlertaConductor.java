@@ -13,7 +13,10 @@ import android.widget.Toast;
 
 import com.google.gson.JsonObject;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class AlertaConductor extends AppCompatActivity {
 
@@ -60,7 +63,7 @@ public class AlertaConductor extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 // Obtener el evento seleccionado del spinner
-                Evento eventoSeleccionado = (Evento) spinerevento.getSelectedItem();
+                eventoSeleccionado = (Evento) spinerevento.getSelectedItem();
 
                 // Verificar que se haya seleccionado un evento
                 if (eventoSeleccionado != null) {
@@ -71,6 +74,7 @@ public class AlertaConductor extends AppCompatActivity {
 
                         // Hacer algo con el email y la contraseña...
                         obtenerIdConductor(email);
+
                     } else {
                         Toast.makeText(AlertaConductor.this, "Error al obtener datos del usuario", Toast.LENGTH_SHORT).show();
                     }
@@ -99,6 +103,12 @@ public class AlertaConductor extends AppCompatActivity {
                     int idConductor = response.getAsJsonObject("result").get("Fk_IdConductor").getAsInt();
                     Toast.makeText(AlertaConductor.this, "ID conductor: " + idConductor, Toast.LENGTH_LONG).show();
                     Log.d("AlertaConductor", "ID conductor: " + idConductor);
+
+                    // Obtener la fecha y hora actual
+                    String fecha = obtenerFechaActual();
+                    String hora = obtenerHoraActual();
+                    int idEvento = eventoSeleccionado.getId();
+                    registrarAlertaConductorint(idEvento, idConductor, fecha, hora);
                 } else {
                     Toast.makeText(AlertaConductor.this, "Error: Respuesta nula o falta la clave Fk_IdConductor", Toast.LENGTH_SHORT).show();
                     Log.e("AlertaConductor", "Error: Respuesta nula o falta la clave Fk_IdConductor");
@@ -123,4 +133,33 @@ public class AlertaConductor extends AppCompatActivity {
         }
     }
 
+    // Funciones auxiliares para obtener la fecha y la hora actual
+    private String obtenerFechaActual() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        return sdf.format(new Date());
+    }
+
+    private String obtenerHoraActual() {
+        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
+        return sdf.format(new Date());
+    }
+
+    private void registrarAlertaConductorint(int idEvento, int fkIdConductor, String fecha, String hora) {
+        ConexionServer.registrarAlertaConductor(idEvento, fkIdConductor, fecha, hora, new ConexionServer.OnServerResponseListener<Object>() {
+            @Override
+            public void onServerSuccess(String message) {
+                Toast.makeText(AlertaConductor.this, "Alerta del conductor registrada exitosamente", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onServerResponse(Object response) {
+                // Puedes manejar la respuesta del servidor si es necesario
+            }
+
+            @Override
+            public void onServerError(Exception e) {
+                Toast.makeText(AlertaConductor.this, "Error al registrar la alerta del conductor: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
 }

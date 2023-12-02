@@ -21,4 +21,7 @@ public interface ServicoAPI {
 
     @GET("obtenerIdConductor/{email}")
     Call<JsonObject> obtenerIdConductor(@Path("email") String email);
+
+    @POST("registrarAlertaConductor/{idEvento}")
+    Call<Void> registrarAlertaConductor(@Path("idEvento") int idEvento,@Body EventoConductor request);
 }
