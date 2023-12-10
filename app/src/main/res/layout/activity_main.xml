@@ -37,7 +37,8 @@
             android:layout_height="58dp"
             android:layout_gravity="center"
             android:layout_marginTop="20dp"
-            android:text="Iniciar sesion" />
+            android:text="Iniciar sesion"
+            android:textColorLink="#ff6750a4" />
 
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

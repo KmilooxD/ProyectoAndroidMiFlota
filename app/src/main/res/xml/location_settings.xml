@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<location-settings xmlns:tools="http://schemas.android.com/tools"
+    tools:ignore="ManifestResource">
+    <location-request>
+        <priority>high_accuracy</priority>
+        <interval>0</interval>
+        <fastest_interval>0</fastest_interval>
+        <num_updates>1</num_updates>
+    </location-request>
+</location-settings>

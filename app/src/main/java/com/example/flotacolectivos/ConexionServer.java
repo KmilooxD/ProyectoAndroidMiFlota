@@ -17,7 +17,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class ConexionServer {
 
-    private static final String BASE_URL = "http://192.168.249.46:3000/";
+    private static final String BASE_URL = "http://192.168.107.46:3000/";
     private static ServicoAPI apiService;
 
     public interface OnServerResponseListener<T> {
@@ -54,6 +54,8 @@ public class ConexionServer {
             @Override
             public void onFailure(Call<Void> call, Throwable t) {
                 // Error de conexión
+                Log.e("API", "Error de conexión: aaaaaa " + t.getMessage());
+                t.printStackTrace(); // Agrega esta línea para imprimir el stack trace completo
                 listener.onServerError(new Exception("Error de conexión"));
             }
         });

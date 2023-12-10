@@ -29,5 +29,12 @@
             android:layout_gravity="center"
             android:layout_marginTop="20dp"
             android:text="Ingresar alerta" />
+
+        <Button
+            android:id="@+id/button_activarUbicacion"
+            android:layout_width="185dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="Activar ubicacion" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
