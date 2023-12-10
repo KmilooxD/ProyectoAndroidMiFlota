@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -65,18 +66,20 @@ public class AlertaConductor extends AppCompatActivity {
 
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
-
+        solicitarPermisosYActualizarUbicacion();
         btn_activarUbicacion.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (locationPermissionGranted) {
-                    obtenerUbicacionActual();
-                    iniciarActualizacionUbicacion();
+                if (isUbicacionHabilitada()) {
+                    // La ubicación está habilitada, obtener la ubicación
+                    actualizarUbicacion();
                 } else {
-                    solicitarPermisosUbicacion();
+                    // La ubicación no está habilitada, abrir configuración de ubicación
+                    abrirConfiguracionUbicacion();
                 }
             }
         });
+
 
         // Llamada a la API para obtener eventos
         ConexionServer.obtenerEventosDesdeServidor(new ConexionServer.OnServerResponseListener<List<Evento>>() {
@@ -208,16 +211,14 @@ public class AlertaConductor extends AppCompatActivity {
         });
     }
 
-    private void solicitarPermisosUbicacion() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                // Si ya se tienen permisos, establecer la bandera y obtener ubicación
-                locationPermissionGranted = true;
-                obtenerUbicacionActual();
-            } else {
-                // Si no hay permisos, solicitarlos
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION_REQUEST_CODE);
-            }
+    private void solicitarPermisosYActualizarUbicacion() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            // Si ya se tienen permisos, actualizar el estado y obtener/actualizar ubicación
+            locationPermissionGranted = true;
+
+        } else {
+            // Si no hay permisos, solicitarlos
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION_REQUEST_CODE);
         }
     }
 
@@ -226,47 +227,45 @@ public class AlertaConductor extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // Si el permiso es otorgado, establecer la bandera y obtener ubicación
+                // Si el permiso es otorgado, establecer la bandera y obtener/actualizar ubicación
                 locationPermissionGranted = true;
-                obtenerUbicacionActual();
+                actualizarUbicacion();
             } else {
-                Toast.makeText(this, "Permiso de ubicación denegado", Toast.LENGTH_SHORT).show();
+                // Si se deniega el permiso, mostrar un mensaje
+                Toast.makeText(this, "La aplicación necesita permisos de ubicación para funcionar correctamente.", Toast.LENGTH_LONG).show();
             }
         }
     }
 
-    private void obtenerUbicacionActual() {
-        // Verificar si tienes permisos de ubicación
+    private void actualizarUbicacion() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            // Tienes permisos, puedes obtener la ubicación actual
+            // Tienes permisos, puedes obtener y actualizar la ubicación actual
             fusedLocationClient.getLastLocation()
                     .addOnSuccessListener(this, new OnSuccessListener<Location>() {
                         @Override
                         public void onSuccess(Location location) {
                             if (location != null) {
-                                double latitud = location.getLatitude();
-                                double longitud = location.getLongitude();
-                                Log.d("alertaconducot", "ubicacion obtenida " + latitud + " , " + longitud);
-                                Toast.makeText(AlertaConductor.this, "Latitud: " + latitud + ", Longitud: " + longitud, Toast.LENGTH_SHORT).show();
+                                actualizarUbicacionToast(location.getLatitude(), location.getLongitude());
                             } else {
-                                Toast.makeText(AlertaConductor.this, "Ubicación no disponible", Toast.LENGTH_SHORT).show();
+                                //Toast.makeText(AlertaConductor.this, "Ubicación no disponible", Toast.LENGTH_SHORT).show();
                             }
                         }
                     });
-        } else {
-            // No tienes permisos, solicitar permisos de ubicación
-            solicitarPermisosUbicacion();
-        }
-    }
 
-
-    private void iniciarActualizacionUbicacion() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            // Iniciar actualizaciones de ubicación
             fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null);
         } else {
-            solicitarPermisosUbicacion();
+            // No tienes permisos, solicitar permisos de ubicación
+            solicitarPermisosYActualizarUbicacion();
         }
     }
+
+    // Método para actualizar el Toast con las nuevas coordenadas de latitud y longitud
+    private void actualizarUbicacionToast(double latitud, double longitud) {
+        String mensaje = "Latitud: " + latitud + ", Longitud: " + longitud;
+        Toast.makeText(AlertaConductor.this, mensaje, Toast.LENGTH_SHORT).show();
+    }
+
 
     // Crear un objeto LocationCallback para manejar las actualizaciones de ubicación
     private LocationCallback locationCallback = new LocationCallback() {
@@ -277,7 +276,7 @@ public class AlertaConductor extends AppCompatActivity {
                 Location location = locationResult.getLastLocation();
                 double latitud = location.getLatitude();
                 double longitud = location.getLongitude();
-                Toast.makeText(AlertaConductor.this, "Latitud: " + latitud + ", Longitud: " + longitud, Toast.LENGTH_SHORT).show();
+                actualizarUbicacionToast(latitud, longitud);
             }
         }
     };
@@ -294,5 +293,32 @@ public class AlertaConductor extends AppCompatActivity {
 
 
     }
+
+    private boolean isUbicacionHabilitada() {
+        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Verificar la ubicación cuando la aplicación vuelve a estar en primer plano
+        if (locationPermissionGranted) {
+            if (isUbicacionHabilitada()) {
+                actualizarUbicacion();
+                Toast.makeText(AlertaConductor.this, "Ubicación activada", Toast.LENGTH_SHORT).show();
+
+            } else {
+                Toast.makeText(AlertaConductor.this, "Ubicación desactivada. Habilite la ubicación ", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private void abrirConfiguracionUbicacion() {
+        Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+        startActivity(intent);
+        // No intentes actualizar la ubicación aquí
+    }
+
 }
 
