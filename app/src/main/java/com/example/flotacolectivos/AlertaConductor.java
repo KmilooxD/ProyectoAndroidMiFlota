@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
-import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -19,8 +18,10 @@ import androidx.core.app.ActivityCompat;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
-
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.gson.JsonObject;
@@ -42,11 +43,21 @@ public class AlertaConductor extends AppCompatActivity {
     private FusedLocationProviderClient fusedLocationClient;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     private boolean locationPermissionGranted = false;
+    private LocationRequest locationRequest;
+    private static final long UPDATE_INTERVAL = 5000;  // 5 segundos en milisegundos
+    private static final long FASTEST_INTERVAL = 2000; // 2 segundos en milisegundos
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_alerta_conductor);
+
+        // Crear la solicitud de ubicación
+        locationRequest = LocationRequest.create();
+        locationRequest.setInterval(UPDATE_INTERVAL);
+        locationRequest.setFastestInterval(FASTEST_INTERVAL);
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
         spinerevento = findViewById(R.id.spinnerTipoAlerta);
         btn_ingresarAlerta = findViewById(R.id.btnEnviarAlerta);
@@ -60,6 +71,7 @@ public class AlertaConductor extends AppCompatActivity {
             public void onClick(View view) {
                 if (locationPermissionGranted) {
                     obtenerUbicacionActual();
+                    iniciarActualizacionUbicacion();
                 } else {
                     solicitarPermisosUbicacion();
                 }
@@ -234,7 +246,7 @@ public class AlertaConductor extends AppCompatActivity {
                             if (location != null) {
                                 double latitud = location.getLatitude();
                                 double longitud = location.getLongitude();
-                               Log.d("alertaconducot","ubicacion obtenida "+latitud+" , "+longitud);
+                                Log.d("alertaconducot", "ubicacion obtenida " + latitud + " , " + longitud);
                                 Toast.makeText(AlertaConductor.this, "Latitud: " + latitud + ", Longitud: " + longitud, Toast.LENGTH_SHORT).show();
                             } else {
                                 Toast.makeText(AlertaConductor.this, "Ubicación no disponible", Toast.LENGTH_SHORT).show();
@@ -245,6 +257,42 @@ public class AlertaConductor extends AppCompatActivity {
             // No tienes permisos, solicitar permisos de ubicación
             solicitarPermisosUbicacion();
         }
+    }
+
+
+    private void iniciarActualizacionUbicacion() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null);
+        } else {
+            solicitarPermisosUbicacion();
+        }
+    }
+
+    // Crear un objeto LocationCallback para manejar las actualizaciones de ubicación
+    private LocationCallback locationCallback = new LocationCallback() {
+        @Override
+        public void onLocationResult(LocationResult locationResult) {
+            super.onLocationResult(locationResult);
+            if (locationResult != null && locationResult.getLastLocation() != null) {
+                Location location = locationResult.getLastLocation();
+                double latitud = location.getLatitude();
+                double longitud = location.getLongitude();
+                Toast.makeText(AlertaConductor.this, "Latitud: " + latitud + ", Longitud: " + longitud, Toast.LENGTH_SHORT).show();
+            }
+        }
+    };
+
+    // Detener las actualizaciones de ubicación cuando la actividad se pausa
+    @Override
+    protected void onPause() {
+        super.onPause();
+        detenerActualizacionUbicacion();
+    }
+
+    private void detenerActualizacionUbicacion() {
+        fusedLocationClient.removeLocationUpdates(locationCallback);
+
+
     }
 }
 
