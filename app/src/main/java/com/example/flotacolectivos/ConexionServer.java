@@ -163,8 +163,8 @@ public class ConexionServer {
         });
     }
 
-    public static void registrarAlertaConductor(int idEvento, int fkIdConductor, String fecha, String hora, OnServerResponseListener<Object> listener) {
-        EventoConductor request = new EventoConductor(idEvento, fkIdConductor, fecha, hora);
+    public static void registrarAlertaConductor(int idEvento, int fkIdConductor, String fecha, String hora,double latitud, double longitud, OnServerResponseListener<Object> listener) {
+        EventoConductor request = new EventoConductor(idEvento, fkIdConductor, fecha, hora,latitud,longitud);
 
         Call<Void> call = getApiService().registrarAlertaConductor(idEvento, request);
         call.enqueue(new Callback<Void>() {
@@ -209,6 +209,29 @@ public class ConexionServer {
         });
     }
 
+    public static void registrarUbicacion(double latitud, double longitud, int fkIdVehiculo, OnServerResponseListener<Object> listener) {
+        Ubicacion ubicacion = new Ubicacion(latitud, longitud, fkIdVehiculo);
+
+        Call<Void> call = getApiService().registrarUbicacion(ubicacion);
+        call.enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    // Éxito
+                    listener.onServerResponse("Ubicación registrada exitosamente");
+                } else {
+                    // Manejo del error
+                    listener.onServerError(new Exception("Error al registrar la ubicación"));
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                // Error de conexión
+                listener.onServerError(new Exception("Error de conexión"));
+            }
+        });
+    }
 
 
 

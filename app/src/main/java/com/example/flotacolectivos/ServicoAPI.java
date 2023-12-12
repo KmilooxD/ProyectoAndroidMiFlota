@@ -8,6 +8,7 @@ import retrofit2.http.Body;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
 import retrofit2.http.Path;
+import retrofit2.http.Query;
 
 public interface ServicoAPI {
     @POST("autenticarUsuario")
@@ -28,6 +29,7 @@ public interface ServicoAPI {
     @GET("obtenerVehiculoPorIdConductor/{idConductor}")
     Call<Vehiculo> obtenerVehiculoPorIdConductor(@Path("idConductor") int idConductor);
 
-
+    @POST("registrarUbicacion")
+    Call<Void> registrarUbicacion(@Body Ubicacion ubicacion);
 
 }
