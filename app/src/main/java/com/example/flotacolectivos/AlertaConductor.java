@@ -157,6 +157,7 @@ public class AlertaConductor extends AppCompatActivity {
                     String hora = obtenerHoraActual();
                     int idEvento = eventoSeleccionado.getId();
                     registrarAlertaConductorint(idEvento, idConductor, fecha, hora);
+                    obtenerVehiculoPorIdConductor(idConductor);
                 } else {
                     Toast.makeText(AlertaConductor.this, "Error: Respuesta nula o falta la clave Fk_IdConductor", Toast.LENGTH_SHORT).show();
                     Log.e("AlertaConductor", "Error: Respuesta nula o falta la clave Fk_IdConductor");
@@ -210,6 +211,38 @@ public class AlertaConductor extends AppCompatActivity {
             }
         });
     }
+
+    private void obtenerVehiculoPorIdConductor(int idConductor) {
+        ConexionServer.obtenerVehiculoPorIdConductor(idConductor, new ConexionServer.OnServerResponseListener<Vehiculo>() {
+            @Override
+            public void onServerSuccess(String message) {
+                // Puedes manejar el éxito si es necesario
+            }
+
+            @Override
+            public void onServerResponse(Vehiculo response) {
+                if (response != null) {
+                    // Aquí puedes trabajar con el objeto Vehiculo obtenido
+                    // Por ejemplo, mostrar información sobre el vehículo en la interfaz de usuario
+                    String infoVehiculo = "Vehículo: " + response.getMarca() + " " + response.getModelo();
+                    Toast.makeText(AlertaConductor.this, infoVehiculo, Toast.LENGTH_LONG).show();
+                    Log.d("AlertaConductor", "ID del vehículo: " + response.getId());
+                } else {
+                    Toast.makeText(AlertaConductor.this, "Error: Respuesta nula al obtener el vehículo", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onServerError(Exception e) {
+                Log.d("Alertaconductor", "Error: " + e.getMessage());
+                Toast.makeText(AlertaConductor.this, "Error al obtener el vehículo: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+
+
+
 
     private void solicitarPermisosYActualizarUbicacion() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {

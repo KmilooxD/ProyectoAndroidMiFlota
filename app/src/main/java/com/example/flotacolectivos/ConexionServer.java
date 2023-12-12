@@ -17,7 +17,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class ConexionServer {
 
-    private static final String BASE_URL = "http://192.168.107.46:3000/";
+    private static final String BASE_URL = "http://192.168.185.46:3000/";
     private static ServicoAPI apiService;
 
     public interface OnServerResponseListener<T> {
@@ -186,6 +186,30 @@ public class ConexionServer {
             }
         });
     }
+
+    public static void obtenerVehiculoPorIdConductor(int idConductor, OnServerResponseListener<Vehiculo> listener) {
+        Call<Vehiculo> call = getApiService().obtenerVehiculoPorIdConductor(idConductor);
+        call.enqueue(new Callback<Vehiculo>() {
+            @Override
+            public void onResponse(Call<Vehiculo> call, Response<Vehiculo> response) {
+                if (response.isSuccessful()) {
+                    // Éxito
+                    listener.onServerResponse(response.body());
+                } else {
+                    // Manejo del error
+                    listener.onServerError(new Exception("Error en la respuesta del servidor: " + response.code()));
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Vehiculo> call, Throwable t) {
+                // Error de conexión
+                listener.onServerError(new Exception("Error de conexión: " + t.getMessage()));
+            }
+        });
+    }
+
+
 
 
     private static ServicoAPI getApiService() {

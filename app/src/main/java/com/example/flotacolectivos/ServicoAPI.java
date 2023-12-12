@@ -24,4 +24,10 @@ public interface ServicoAPI {
 
     @POST("registrarAlertaConductor/{idEvento}")
     Call<Void> registrarAlertaConductor(@Path("idEvento") int idEvento,@Body EventoConductor request);
+
+    @GET("obtenerVehiculoPorIdConductor/{idConductor}")
+    Call<Vehiculo> obtenerVehiculoPorIdConductor(@Path("idConductor") int idConductor);
+
+
+
 }
