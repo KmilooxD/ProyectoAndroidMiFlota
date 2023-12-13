@@ -49,14 +49,15 @@ public class AlertaConductor extends AppCompatActivity {
     private static final long FASTEST_INTERVAL = 2000; // 2 segundos en milisegundos
     private double latitud;
     private double longitud;
-    private int fkIdVehiculo;
+    private int idVehiculo;
+    private String emaill;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_alerta_conductor);
-
-
 
         // Crear la solicitud de ubicación
         locationRequest = LocationRequest.create();
@@ -71,7 +72,6 @@ public class AlertaConductor extends AppCompatActivity {
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         solicitarPermisosYActualizarUbicacion();
-
         btn_activarUbicacion.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -100,8 +100,6 @@ public class AlertaConductor extends AppCompatActivity {
                 ArrayAdapter<Evento> adapter = new ArrayAdapter<>(AlertaConductor.this, android.R.layout.simple_spinner_item, eventos);
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 spinerevento.setAdapter(adapter);
-
-
             }
 
             @Override
@@ -114,6 +112,7 @@ public class AlertaConductor extends AppCompatActivity {
         // Obtener el AuntenticarUsuario de la intención al iniciar la actividad por primera vez
         autenticarUsuario = obtenerAuntenticarUsuarioDeIntent();
 
+
         btn_ingresarAlerta.setOnClickListener(new View.OnClickListener() {
 
             @Override
@@ -123,6 +122,7 @@ public class AlertaConductor extends AppCompatActivity {
 
                 // Verificar que se haya seleccionado un evento
                 if (eventoSeleccionado != null) {
+
                     // Verificar si se obtuvo correctamente el AuntenticarUsuario
                     if (autenticarUsuario != null) {
                         // Obtener el email del AuntenticarUsuario
@@ -130,11 +130,12 @@ public class AlertaConductor extends AppCompatActivity {
 
                         // Hacer algo con el email y la contraseña...
                         obtenerIdConductor(email);
+                        actualizarUbicacion();
+
 
                     } else {
                         Toast.makeText(AlertaConductor.this, "Error al obtener datos del usuario", Toast.LENGTH_SHORT).show();
                     }
-
                     int idEvento = eventoSeleccionado.getId();
                     Toast.makeText(AlertaConductor.this, "ID del evento seleccionado: " + idEvento, Toast.LENGTH_SHORT).show();
                     // Aquí puedes utilizar el idEvento según tus necesidades
@@ -145,7 +146,6 @@ public class AlertaConductor extends AppCompatActivity {
         });
     }
 
-
     private void obtenerIdConductor(String email) {
         ConexionServer.obtenerIdConductor(email, new ConexionServer.OnServerResponseListener<JsonObject>() {
             @Override
@@ -155,28 +155,20 @@ public class AlertaConductor extends AppCompatActivity {
 
             @Override
             public void onServerResponse(JsonObject response) {
+                // Manejar la respuesta del servidor (obtuvimos el ID del conductor)
                 if (response != null && response.has("result") && response.getAsJsonObject("result").has("Fk_IdConductor")) {
                     int idConductor = response.getAsJsonObject("result").get("Fk_IdConductor").getAsInt();
                     Toast.makeText(AlertaConductor.this, "ID conductor: " + idConductor, Toast.LENGTH_LONG).show();
                     Log.d("AlertaConductor", "ID conductor: " + idConductor);
-
+                    obtenerVehiculoPorIdConductor(idConductor);
                     // Obtener la fecha y hora actual
                     String fecha = obtenerFechaActual();
                     String hora = obtenerHoraActual();
                     int idEvento = eventoSeleccionado.getId();
+                    registrarAlertaConductorint(idEvento, idConductor, fecha, hora,latitud,longitud);
 
-                   // Log.d("alertaconducot","lat y long "+latitud+" , "+longitud);
-                    // Utilizar el nuevo método con un listener para manejar el resultado
-                    obtenerVehiculoPorIdConductor(idConductor, new VehiculoObtenido() {
 
-                        @Override
-                        public void VehiculoObtenido(int fkIdVehiculo) {
-                            // Aquí puedes hacer lo que necesitas con fkIdVehiculo
-                            // Por ejemplo, llamar a tu método registrarAlertaConductorint con fkIdVehiculo
-                            registrarAlertaConductorint(idEvento, idConductor, fecha, hora,latitud,longitud);
 
-                        }
-                    });
                 } else {
                     Toast.makeText(AlertaConductor.this, "Error: Respuesta nula o falta la clave Fk_IdConductor", Toast.LENGTH_SHORT).show();
                     Log.e("AlertaConductor", "Error: Respuesta nula o falta la clave Fk_IdConductor");
@@ -185,11 +177,11 @@ public class AlertaConductor extends AppCompatActivity {
 
             @Override
             public void onServerError(Exception e) {
+                // Manejar error de servidor al obtener el ID del conductor
                 Toast.makeText(AlertaConductor.this, "Error al obtener el ID del conductor: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }
-
 
     // Método para obtener el AuntenticarUsuario de la intención
     private AuntenticarUsuario obtenerAuntenticarUsuarioDeIntent() {
@@ -231,8 +223,7 @@ public class AlertaConductor extends AppCompatActivity {
         });
     }
 
-
-    private void obtenerVehiculoPorIdConductor(int idConductor, VehiculoObtenido listener) {
+    private void obtenerVehiculoPorIdConductor(int idConductor) {
         ConexionServer.obtenerVehiculoPorIdConductor(idConductor, new ConexionServer.OnServerResponseListener<Vehiculo>() {
             @Override
             public void onServerSuccess(String message) {
@@ -242,17 +233,14 @@ public class AlertaConductor extends AppCompatActivity {
             @Override
             public void onServerResponse(Vehiculo response) {
                 if (response != null) {
+                    // Aquí puedes trabajar con el objeto Vehiculo obtenido
+                    // Por ejemplo, mostrar información sobre el vehículo en la interfaz de usuario
                     String infoVehiculo = "Vehículo: " + response.getMarca() + " " + response.getModelo();
                     Toast.makeText(AlertaConductor.this, infoVehiculo, Toast.LENGTH_LONG).show();
-
                     Log.d("AlertaConductor", "ID del vehículo: " + response.getId());
-                    fkIdVehiculo = response.getId();  // Actualizar el valor de fkIdVehiculo
+                    int idVehiculo=response.getId();
+                    //registrarUbicacion(latitud,longitud,idVehiculo);
 
-                    // Llamar al método del listener con el valor obtenido
-                    listener.VehiculoObtenido(fkIdVehiculo);
-
-                    // Mover la llamada a registrarUbicacion() aquí después de obtener fkIdVehiculo
-                    registrarUbicacion();
                 } else {
                     Toast.makeText(AlertaConductor.this, "Error: Respuesta nula al obtener el vehículo", Toast.LENGTH_SHORT).show();
                 }
@@ -265,6 +253,29 @@ public class AlertaConductor extends AppCompatActivity {
             }
         });
     }
+
+   /** private void registrarUbicacion(double latitud, double longitud, int fkIdVehiculo) {
+        ConexionServer.registrarUbicacion(latitud, longitud, fkIdVehiculo, new ConexionServer.OnServerResponseListener<Object>() {
+            @Override
+            public void onServerSuccess(String message) {
+                // Manejo de la respuesta exitosa
+                Toast.makeText(AlertaConductor.this, "Ubicación registrada exitosamente", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onServerResponse(Object response) {
+                // Puedes manejar la respuesta del servidor si es necesario
+            }
+
+            @Override
+            public void onServerError(Exception e) {
+                // Manejo del error
+                Toast.makeText(AlertaConductor.this, "Error al registrar la ubicación: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+**/
+
 
     private void solicitarPermisosYActualizarUbicacion() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
@@ -291,27 +302,6 @@ public class AlertaConductor extends AppCompatActivity {
             }
         }
     }
-    private void registrarUbicacion() {
-        // Llamada a tu función registrarUbicacion con latitud, longitud y fkIdVehiculo
-        Log.d("AlertaConductor", "Valor de fkIdVehiculo registarubi: " + fkIdVehiculo);
-
-        ConexionServer.registrarUbicacion(latitud, longitud, fkIdVehiculo, new ConexionServer.OnServerResponseListener<Object>() {
-            @Override
-            public void onServerSuccess(String message) {
-                Toast.makeText(AlertaConductor.this, "Ubicación registrada exitosamente", Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onServerResponse(Object response) {
-                // Puedes manejar la respuesta del servidor si es necesario
-            }
-
-            @Override
-            public void onServerError(Exception e) {
-                Toast.makeText(AlertaConductor.this, "Error al registrar la ubicación: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
 
     private void actualizarUbicacion() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
@@ -321,11 +311,11 @@ public class AlertaConductor extends AppCompatActivity {
                         @Override
                         public void onSuccess(Location location) {
                             if (location != null) {
+                                actualizarUbicacionToast(location.getLatitude(), location.getLongitude());
                                 latitud = location.getLatitude();
                                 longitud = location.getLongitude();
-                                actualizarUbicacionToast(location.getLatitude(), location.getLongitude());
 
-                                // Llamada a registrarUbicacion() ya está dentro de obtenerVehiculoPorIdConductor()
+
                             } else {
                                 //Toast.makeText(AlertaConductor.this, "Ubicación no disponible", Toast.LENGTH_SHORT).show();
                             }
@@ -400,6 +390,4 @@ public class AlertaConductor extends AppCompatActivity {
         // No intentes actualizar la ubicación aquí
     }
 
-
 }
-
