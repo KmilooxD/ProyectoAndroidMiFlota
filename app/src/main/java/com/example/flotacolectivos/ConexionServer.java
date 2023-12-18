@@ -17,7 +17,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class ConexionServer {
 
-    private static final String BASE_URL = "http://192.168.185.46:3000/";
+    private static final String BASE_URL = "http://192.168.154.46:3000/";
     private static ServicoAPI apiService;
 
     public interface OnServerResponseListener<T> {
@@ -209,6 +209,7 @@ public class ConexionServer {
         });
     }
 
+    /**
     public static void registrarUbicacion(double latitud, double longitud, int fkIdVehiculo, OnServerResponseListener<Object> listener) {
         Ubicacion ubicacion = new Ubicacion(latitud, longitud, fkIdVehiculo);
 
@@ -232,7 +233,7 @@ public class ConexionServer {
             }
         });
     }
-
+**/
 
 
     private static ServicoAPI getApiService() {

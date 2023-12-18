@@ -43,14 +43,13 @@ public class AlertaConductor extends AppCompatActivity {
     private AuntenticarUsuario autenticarUsuario; // Nueva variable de instancia
     private FusedLocationProviderClient fusedLocationClient;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
-    private boolean locationPermissionGranted = false;
     private LocationRequest locationRequest;
     private static final long UPDATE_INTERVAL = 5000;  // 5 segundos en milisegundos
     private static final long FASTEST_INTERVAL = 2000; // 2 segundos en milisegundos
     private double latitud;
     private double longitud;
-    private int idVehiculo;
-    private String emaill;
+    private boolean permisoAceptado = false;
+
 
 
 
@@ -68,7 +67,7 @@ public class AlertaConductor extends AppCompatActivity {
         spinerevento = findViewById(R.id.spinnerTipoAlerta);
         btn_ingresarAlerta = findViewById(R.id.btnEnviarAlerta);
         btn_activarUbicacion = findViewById(R.id.button_activarUbicacion);
-
+        btn_activarUbicacion.setEnabled(false);
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         solicitarPermisosYActualizarUbicacion();
@@ -77,6 +76,7 @@ public class AlertaConductor extends AppCompatActivity {
             public void onClick(View view) {
                 if (isUbicacionHabilitada()) {
                     // La ubicación está habilitada, obtener la ubicación
+                 //   btn_activarUbicacion.setEnabled(true);
                     actualizarUbicacion();
                 } else {
                     // La ubicación no está habilitada, abrir configuración de ubicación
@@ -114,36 +114,50 @@ public class AlertaConductor extends AppCompatActivity {
 
 
         btn_ingresarAlerta.setOnClickListener(new View.OnClickListener() {
-
             @Override
             public void onClick(View view) {
-                // Obtener el evento seleccionado del spinner
-                eventoSeleccionado = (Evento) spinerevento.getSelectedItem();
+                // Verificar si la ubicación está habilitada
+                if (permisoAceptado && isUbicacionHabilitada()) {
+                    // Obtener el evento seleccionado del spinner
+                    eventoSeleccionado = (Evento) spinerevento.getSelectedItem();
 
-                // Verificar que se haya seleccionado un evento
-                if (eventoSeleccionado != null) {
+                    // Verificar que se haya seleccionado un evento
+                    if (eventoSeleccionado != null) {
+                        // Verificar si se obtuvo correctamente el AuntenticarUsuario
+                        if (autenticarUsuario != null) {
+                            // Obtener el email del AuntenticarUsuario
+                            String email = autenticarUsuario.getEmail();
 
-                    // Verificar si se obtuvo correctamente el AuntenticarUsuario
-                    if (autenticarUsuario != null) {
-                        // Obtener el email del AuntenticarUsuario
-                        String email = autenticarUsuario.getEmail();
-
-                        // Hacer algo con el email y la contraseña...
-                        obtenerIdConductor(email);
-                        actualizarUbicacion();
-
-
+                            // Hacer algo con el email y la contraseña...
+                            obtenerIdConductor(email);
+                            actualizarUbicacion();
+                        } else {
+                            Toast.makeText(AlertaConductor.this, "Error al obtener datos del usuario", Toast.LENGTH_SHORT).show();
+                        }
+                        int idEvento = eventoSeleccionado.getId();
+                    //   Toast.makeText(AlertaConductor.this, "ID del evento seleccionado: " + idEvento, Toast.LENGTH_SHORT).show();
+                        // Aquí puedes utilizar el idEvento según tus necesidades
                     } else {
-                        Toast.makeText(AlertaConductor.this, "Error al obtener datos del usuario", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(AlertaConductor.this, "Seleccione un evento primero", Toast.LENGTH_SHORT).show();
                     }
-                    int idEvento = eventoSeleccionado.getId();
-                    Toast.makeText(AlertaConductor.this, "ID del evento seleccionado: " + idEvento, Toast.LENGTH_SHORT).show();
-                    // Aquí puedes utilizar el idEvento según tus necesidades
                 } else {
-                    Toast.makeText(AlertaConductor.this, "Seleccione un evento primero", Toast.LENGTH_SHORT).show();
+                    // Mostrar mensajes específicos según la condición que no se cumpla
+                    if (!permisoAceptado) {
+                        // Mostrar mensaje de falta de permisos
+                        Toast.makeText(AlertaConductor.this, "La aplicación necesita permisos de ubicación.", Toast.LENGTH_LONG).show();
+                        solicitarPermisosYActualizarUbicacion();
+                    } else if (!isUbicacionHabilitada()) {
+                        // Mostrar mensaje de ubicación desactivada
+                        Toast.makeText(AlertaConductor.this, "Por favor, active la ubicación para enviar alertas.", Toast.LENGTH_LONG).show();
+                        abrirConfiguracionUbicacion();
+                    } else {
+                        // Otro mensaje general si ninguna de las condiciones se cumple
+                        Toast.makeText(AlertaConductor.this, "No se pueden ingresar alertas sin permisos de ubicación y ubicación activada.", Toast.LENGTH_LONG).show();
+                    }
                 }
             }
         });
+
     }
 
     private void obtenerIdConductor(String email) {
@@ -158,8 +172,8 @@ public class AlertaConductor extends AppCompatActivity {
                 // Manejar la respuesta del servidor (obtuvimos el ID del conductor)
                 if (response != null && response.has("result") && response.getAsJsonObject("result").has("Fk_IdConductor")) {
                     int idConductor = response.getAsJsonObject("result").get("Fk_IdConductor").getAsInt();
-                    Toast.makeText(AlertaConductor.this, "ID conductor: " + idConductor, Toast.LENGTH_LONG).show();
-                    Log.d("AlertaConductor", "ID conductor: " + idConductor);
+                  // Toast.makeText(AlertaConductor.this, "ID conductor: " + idConductor, Toast.LENGTH_LONG).show();
+                //   Log.d("AlertaConductor", "ID conductor: " + idConductor);
                     obtenerVehiculoPorIdConductor(idConductor);
                     // Obtener la fecha y hora actual
                     String fecha = obtenerFechaActual();
@@ -170,8 +184,8 @@ public class AlertaConductor extends AppCompatActivity {
 
 
                 } else {
-                    Toast.makeText(AlertaConductor.this, "Error: Respuesta nula o falta la clave Fk_IdConductor", Toast.LENGTH_SHORT).show();
-                    Log.e("AlertaConductor", "Error: Respuesta nula o falta la clave Fk_IdConductor");
+                   Toast.makeText(AlertaConductor.this, "Error: Respuesta nula o falta la clave Fk_IdConductor", Toast.LENGTH_SHORT).show();
+                  Log.e("AlertaConductor", "Error: Respuesta nula o falta la clave Fk_IdConductor");
                 }
             }
 
@@ -183,7 +197,7 @@ public class AlertaConductor extends AppCompatActivity {
         });
     }
 
-    // Método para obtener el AuntenticarUsuario de la intención
+
     private AuntenticarUsuario obtenerAuntenticarUsuarioDeIntent() {
         Intent intent = getIntent();
         if (intent.hasExtra("autenticarUsuario")) {
@@ -193,7 +207,7 @@ public class AlertaConductor extends AppCompatActivity {
         }
     }
 
-    // Funciones auxiliares para obtener la fecha y la hora actual
+
     private String obtenerFechaActual() {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         return sdf.format(new Date());
@@ -204,21 +218,26 @@ public class AlertaConductor extends AppCompatActivity {
         return sdf.format(new Date());
     }
 
+
     private void registrarAlertaConductorint(int idEvento, int fkIdConductor, String fecha, String hora, double latitud, double longitud) {
         ConexionServer.registrarAlertaConductor(idEvento, fkIdConductor, fecha, hora,latitud,longitud, new ConexionServer.OnServerResponseListener<Object>() {
             @Override
             public void onServerSuccess(String message) {
-                Toast.makeText(AlertaConductor.this, "Alerta del conductor registrada exitosamente", Toast.LENGTH_SHORT).show();
+
             }
 
             @Override
             public void onServerResponse(Object response) {
                 // Puedes manejar la respuesta del servidor si es necesario
+                Toast.makeText(AlertaConductor.this, "" + response, Toast.LENGTH_LONG).show();
+
             }
 
             @Override
             public void onServerError(Exception e) {
-                Toast.makeText(AlertaConductor.this, "Error al registrar la alerta del conductor: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+
+                        Toast.makeText(AlertaConductor.this, "Error al registrar la alerta del conductor: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+
             }
         });
     }
@@ -235,10 +254,10 @@ public class AlertaConductor extends AppCompatActivity {
                 if (response != null) {
                     // Aquí puedes trabajar con el objeto Vehiculo obtenido
                     // Por ejemplo, mostrar información sobre el vehículo en la interfaz de usuario
-                    String infoVehiculo = "Vehículo: " + response.getMarca() + " " + response.getModelo();
-                    Toast.makeText(AlertaConductor.this, infoVehiculo, Toast.LENGTH_LONG).show();
-                    Log.d("AlertaConductor", "ID del vehículo: " + response.getId());
-                    int idVehiculo=response.getId();
+              //     String infoVehiculo = "Vehículo: " + response.getMarca() + " " + response.getModelo();
+                 //  Toast.makeText(AlertaConductor.this, infoVehiculo, Toast.LENGTH_LONG).show();
+                 // Log.d("AlertaConductor", "ID del vehículo: " + response.getId());
+                  //  int idVehiculo=response.getId();
                     //registrarUbicacion(latitud,longitud,idVehiculo);
 
                 } else {
@@ -280,8 +299,8 @@ public class AlertaConductor extends AppCompatActivity {
     private void solicitarPermisosYActualizarUbicacion() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             // Si ya se tienen permisos, actualizar el estado y obtener/actualizar ubicación
-            locationPermissionGranted = true;
-
+            permisoAceptado = true;
+            btn_activarUbicacion.setEnabled(true);
         } else {
             // Si no hay permisos, solicitarlos
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION_REQUEST_CODE);
@@ -294,11 +313,12 @@ public class AlertaConductor extends AppCompatActivity {
         if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // Si el permiso es otorgado, establecer la bandera y obtener/actualizar ubicación
-                locationPermissionGranted = true;
+                permisoAceptado = true;
                 actualizarUbicacion();
+
             } else {
                 // Si se deniega el permiso, mostrar un mensaje
-                Toast.makeText(this, "La aplicación necesita permisos de ubicación para funcionar correctamente.", Toast.LENGTH_LONG).show();
+             //  Toast.makeText(this, "La aplicación necesita permisos de ubicación para funcionar correctamente.", Toast.LENGTH_LONG).show();
             }
         }
     }
@@ -317,7 +337,7 @@ public class AlertaConductor extends AppCompatActivity {
 
 
                             } else {
-                                //Toast.makeText(AlertaConductor.this, "Ubicación no disponible", Toast.LENGTH_SHORT).show();
+                               // Toast.makeText(AlertaConductor.this, "Ubicación no disponible", Toast.LENGTH_SHORT).show();
                             }
                         }
                     });
@@ -332,8 +352,8 @@ public class AlertaConductor extends AppCompatActivity {
 
     // Método para actualizar el Toast con las nuevas coordenadas de latitud y longitud
     private void actualizarUbicacionToast(double latitud, double longitud) {
-        String mensaje = "Latitud: " + latitud + ", Longitud: " + longitud;
-        Toast.makeText(AlertaConductor.this, mensaje, Toast.LENGTH_SHORT).show();
+    //    String mensaje = "Latitud: " + latitud + ", Longitud: " + longitud;
+     //  Toast.makeText(AlertaConductor.this, mensaje, Toast.LENGTH_SHORT).show();
     }
 
 
@@ -373,13 +393,15 @@ public class AlertaConductor extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         // Verificar la ubicación cuando la aplicación vuelve a estar en primer plano
-        if (locationPermissionGranted) {
+        if (permisoAceptado) {
             if (isUbicacionHabilitada()) {
+                btn_activarUbicacion.setEnabled(true);
                 actualizarUbicacion();
-                Toast.makeText(AlertaConductor.this, "Ubicación activada", Toast.LENGTH_SHORT).show();
+              Toast.makeText(AlertaConductor.this, "Ubicación activada", Toast.LENGTH_SHORT).show();
 
             } else {
-                Toast.makeText(AlertaConductor.this, "Ubicación desactivada. Habilite la ubicación ", Toast.LENGTH_SHORT).show();
+                btn_activarUbicacion.setEnabled(false);
+               // Toast.makeText(AlertaConductor.this, "Ubicación desactivada. Habilite la ubicación ", Toast.LENGTH_SHORT).show();
             }
         }
     }
@@ -389,5 +411,4 @@ public class AlertaConductor extends AppCompatActivity {
         startActivity(intent);
         // No intentes actualizar la ubicación aquí
     }
-
 }

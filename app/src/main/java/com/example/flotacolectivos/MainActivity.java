@@ -64,6 +64,8 @@ public class MainActivity extends AppCompatActivity {
                 // Este método no debería ser invocado en el caso de autenticarUsuario, pero implementarlo de todos modos
                 // o lanzar una UnsupportedOperationException para indicar que no se espera este tipo de respuesta.
                 // Manejar mensaje de éxito
+                Toast.makeText(MainActivity.this, "" +response,Toast.LENGTH_SHORT).show();
+
                 if (response.equals("Autenticación exitosa")) {
                     AuntenticarUsuario autenticarUsuario = new AuntenticarUsuario(email, contrasena);
                     Intent intent = new Intent(MainActivity.this, AlertaConductor.class);
